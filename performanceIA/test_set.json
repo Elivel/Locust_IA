@@ -1,0 +1,20 @@
+[
+  {
+    "pregunta": "pasar plata",
+    "esperado":[ "¿A quién deseas pasar plata?",
+     "¿A quién quieres pasar plata?"
+     ]
+  },
+  {
+    "pregunta": "3004011016",
+    "esperado": "¿Cuánta plata quieres pasar?"
+  },
+  {
+    "pregunta": "1000",
+    "esperado": "¿Deseas confirmar la transferencia?"
+  },
+  {
+    "pregunta": "confirmar transferencia",
+    "esperado": "¡Listo! Pasaste"
+  }
+]
