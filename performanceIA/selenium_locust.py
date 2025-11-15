@@ -1,11 +1,11 @@
-from locust import User, task, between, events
+from locust import HttpUser, task, between
 from services.session_service import SessionService
 from flows.voice_flow import VoiceFlow
 import time
 
-class UsuarioFlujoIA(User):
+class UsuarioFlujoIA(HttpUser):
     wait_time = between(10, 15)
-    host = "http://localhost"
+    host = "http://127.0.0.1:5005"  # Stub local para métricas
 
     def on_start(self):
         self.appUrl = SessionService.obtener_appurl()
@@ -18,23 +18,40 @@ class UsuarioFlujoIA(User):
 
     @task
     def flujo_voz(self):
-        inicio = time.time()
-        exito, duracion = self.voice_flow.ejecutar_flujo()
-        if exito:
-            events.request_success.fire(
-                request_type="flujo_voz",
-                name="flujo_selenium",
-                response_time=duracion,
-                response_length=0
-            )
-        else:
-            events.request_failure.fire(
-                request_type="flujo_voz",
-                name="flujo_selenium",
-                response_time=duracion,
-                response_length=0,
-                exception=Exception("Flujo fallido")
-            )
+        exito_total, pasos, duracion_total = self.voice_flow.ejecutar_flujo()
+        
+        # Registrar cada paso como métrica separada en Locust para visualizar en Statistics
+        for paso in pasos:
+            try:
+                with self.client.get(
+                    f"/flujo_voz/{paso['name']}",
+                    name=f"flujo_voz:{paso['name']}",
+                    catch_response=True,
+                    timeout=1,
+                    verify=False
+                ) as resp:
+                    if paso['success']:
+                        resp.success()
+                    else:
+                        resp.failure(paso.get('detail', 'Paso fallido'))
+            except Exception as e:
+                print(f"⚠️ Error registrando métrica '{paso['name']}': {e}")
+        
+        # Registrar métrica total del flujo
+        try:
+            with self.client.get(
+                "/flujo_voz/completo",
+                name="flujo_voz:flujo_completo",
+                catch_response=True,
+                timeout=1,
+                verify=False
+            ) as resp:
+                if exito_total:
+                    resp.success()
+                else:
+                    resp.failure("Flujo de voz falló")
+        except Exception as e:
+            print(f"⚠️ Error registrando métrica total: {e}")
 
     def on_stop(self):
         print("🧹 Cerrando navegador...")

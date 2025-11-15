@@ -1,5 +1,10 @@
 import os, time
 from gtts import gTTS
+try:
+    from playsound import playsound
+    _HAS_PLAYSOUND = True
+except Exception:
+    _HAS_PLAYSOUND = False
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
@@ -16,8 +21,14 @@ class VoiceFlow:
         tts = gTTS(texto, lang='es')
         audio_file = f"voz_{int(time.time())}.mp3"
         tts.save(audio_file)
-        os.system(f"start {audio_file}")
-        time.sleep(espera_ia)
+        try:
+            if _HAS_PLAYSOUND:
+                playsound(audio_file)
+            else:
+                os.system(f"start {audio_file}")
+                time.sleep(espera_ia)
+        except Exception:
+            time.sleep(espera_ia)
         try:
             os.remove(audio_file)
         except:
@@ -46,24 +57,15 @@ class VoiceFlow:
             print("🎙️ Micrófono activado.")
 
             # Paso 1️⃣ - “pasar plata”
-            self.reproducir_voz("pasar plata")
+            self.reproducir_voz("pasar plata al numero 300 401 10 16 por valor de 1000 pesos")
             respuesta = self.validar_respuesta([
-                "¿A quién deseas pasar plata?",
-                "¿A quién quieres pasar plata?",
-                "Disculpa, no entendí bien"
+                "¿Deseas confirmar la transferencia?", "¿Confirmas el envío?"
+                
             ])
 
             if "no entendí" in respuesta.lower():
-                self.reproducir_voz("pasar plata")
-                respuesta = self.validar_respuesta(["¿A quién deseas pasar plata?", "¿A quién quieres pasar plata?"])
-
-            # Paso 2️⃣ - número
-            self.reproducir_voz("300 401 10 16")
-            self.validar_respuesta(["¿Cuánta plata quieres pasar?", "¿Cuál es el monto que deseas enviar?"])
-
-            # Paso 3️⃣ - monto
-            self.reproducir_voz("1000 pesos")
-            self.validar_respuesta(["¿Deseas confirmar la transferencia?", "¿Confirmas el envío?"])
+                self.reproducir_voz("pasar plata al numero 300 401 10 16 por valor de 1000 pesos")
+                respuesta = self.validar_respuesta(["¿Deseas confirmar la transferencia?", "¿Confirmas el envío?"])
 
             # Paso 4️⃣ - confirmar
             self.reproducir_voz("confirmar transferencia")
@@ -71,8 +73,17 @@ class VoiceFlow:
 
             duracion = round((time.time() - inicio) * 1000, 2)
             print(f"✅ Flujo completado correctamente en {duracion} ms")
-            return True, duracion
+            return True, [{
+                "name": "flujo_completo",
+                "success": True,
+                "duration_ms": duracion
+            }], duracion
 
         except Exception as e:
             print(f"❌ Error en flujo: {e}")
-            return False, round((time.time() - inicio) * 1000, 2)
+            duracion = round((time.time() - inicio) * 1000, 2)
+            return False, [{
+                "name": "flujo_completo",
+                "success": False,
+                "duration_ms": duracion
+            }], duracion

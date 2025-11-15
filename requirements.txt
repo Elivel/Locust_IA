@@ -2,3 +2,5 @@ locust
 selenium
 gtts
 requests
+flask
+playsound

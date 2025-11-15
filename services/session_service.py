@@ -18,14 +18,14 @@ class SessionService:
         # ... (Tu código para obtener appUrl - No se modifica) ...
         url = "http://localhost:8076/api/presentacion-cliente?="
         headers = {
-            "ufw-channel": "UTF-8",
-            "Content-Type": "application/json",
-            "User-Agent": "locust/selenium",
-            "action": "OPEN_WITHOUT_CIPHER",
-            "app-consumer-id": "APP-DAVIPLATA",
-            "app-module-id": "krs",
-            "Accept": "*/*",
-            "x-request-id": f"locust-{int(time.time())}"
+        "ufw-channel": "UTF-8",
+        "Content-Type": "application/json",
+        "User-Agent": "locust/selenium",
+        "action": "OPEN_WITHOUT_CIPHER",
+        "app-consumer-id": "APP-DAVIPLATA",
+        "app-module-id": "krs",
+        "Acept": "*/*",
+        "x-request-id": f"locust-{int(time.time())}"
         }
         data = {
     "data": "{\"client\":{\"firstName\":\"Armando\",\"secondName\":\"\",\"lastName\":\"Bronca\",\"secondLastName\":\"Segura\",\"balance\":9442350.99,\"documentClient\":{\"number\":\"1100114\",\"type\":\"01\"},\"phoneNumber\":{\"countryId\":\"+57\",\"number\":\"3004011014\"},\"email\":\"xxx@gmail.com\",\"userId\":\"763b9bf753fb9fa56a90a091baa4fcf03c21687bef637ccb4d2e333bc724e5b5\",\"authenticationType\":\"DAVIPLATA\"},\"module\":{\"id\":\"KRS\",\"country\":\"CO\"},\"consumer\":{\"appConsumer\":{\"id\":\"APP_DAVIPLATA\",\"platformType\":\"APP_DAVIPLATAMOVIL\",\"canalId\":\"83\",\"sessionId\":\"17280492576755584902345352747985\",\"transactionId\":\"006355\",\"consumerRequestId\":\"8500\",\"transactionDate\":\"2024-10-04T08:47:21-05:00\"},\"deviceConsumer\":{\"id\":\"199066910afd18aed979359520eb9e30e8e2a07673806bc0607cf1e99bfc1876\",\"userAgent\":\"okhttp/4.9.2\",\"soVersion\":\"Android6.3.0\",\"ipDevice\":\"181.54.52.102\",\"appVersion\":\"6.3.0\",\"originDevice\":\"\",\"idDevice\":\"3004011015\"},\"genericData\":{\"dataItem\":[{\"key\":\"tokenFrontend\",\"value\":\"2db9a44e-4589-49ba-96a5-b4a3737689e7\"}]}}}",
