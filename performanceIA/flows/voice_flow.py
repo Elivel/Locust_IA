@@ -48,42 +48,98 @@ class VoiceFlow:
         return ""
 
     def ejecutar_flujo(self):
-        """Flujo completo por voz"""
-        inicio = time.time()
+        """Flujo completo por voz con cierre automático de navegador"""
+        inicio_total = time.time()
+        pasos = []
+        exito_total = True
+        
         try:
             # Activar micrófono
             boton_micro = self.wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "button._micro_fi68y_27")))
             boton_micro.click()
             print("🎙️ Micrófono activado.")
 
-            # Paso 1️⃣ - “pasar plata”
-            self.reproducir_voz("pasar plata al numero 300 401 10 16 por valor de 1000 pesos")
-            respuesta = self.validar_respuesta([
-                "¿Deseas confirmar la transferencia?", "¿Confirmas el envío?"
-                
-            ])
-
-            if "no entendí" in respuesta.lower():
+            # 🎤 Paso 1️⃣ - "pasar plata"
+            inicio_paso = time.time()
+            try:
                 self.reproducir_voz("pasar plata al numero 300 401 10 16 por valor de 1000 pesos")
-                respuesta = self.validar_respuesta(["¿Deseas confirmar la transferencia?", "¿Confirmas el envío?"])
+                respuesta = self.validar_respuesta([
+                    "¿Deseas confirmar la transferencia?", "¿Confirmas el envío?"
+                ])
+                
+                if not respuesta or "no entendí" in respuesta.lower():
+                    self.reproducir_voz("pasar plata al numero 300 401 10 16 por valor de 1000 pesos")
+                    respuesta = self.validar_respuesta(["¿Deseas confirmar la transferencia?", "¿Confirmas el envío?"])
+                
+                duracion_paso = round((time.time() - inicio_paso) * 1000, 2)
+                exito_paso = bool(respuesta)
+                pasos.append({
+                    "name": "pasar_plata_numero_monto",
+                    "success": exito_paso,
+                    "duration_ms": duracion_paso,
+                    "detail": respuesta or "No validada"
+                })
+                print(f"✅ Paso 1 completado en {duracion_paso} ms")
+                if not exito_paso:
+                    exito_total = False
+            except Exception as e:
+                duracion_paso = round((time.time() - inicio_paso) * 1000, 2)
+                pasos.append({
+                    "name": "pasar_plata_numero_monto",
+                    "success": False,
+                    "duration_ms": duracion_paso,
+                    "detail": str(e)
+                })
+                exito_total = False
+                print(f"❌ Error en paso 1: {e}")
 
-            # Paso 4️⃣ - confirmar
-            self.reproducir_voz("confirmar transferencia")
-            self.validar_respuesta(["¡Listo! Pasaste", "Transferencia realizada con éxito"])
+            # 🎤 Paso 2️⃣ - "confirmar"
+            inicio_paso = time.time()
+            try:
+                self.reproducir_voz("confirmar transferencia")
+                respuesta = self.validar_respuesta([
+                    "¡Listo! Pasaste", "Transferencia realizada con éxito"
+                ])
+                
+                duracion_paso = round((time.time() - inicio_paso) * 1000, 2)
+                exito_paso = bool(respuesta)
+                pasos.append({
+                    "name": "confirmar",
+                    "success": exito_paso,
+                    "duration_ms": duracion_paso,
+                    "detail": respuesta or "No validada"
+                })
+                print(f"✅ Paso 2 completado en {duracion_paso} ms")
+                if not exito_paso:
+                    exito_total = False
+            except Exception as e:
+                duracion_paso = round((time.time() - inicio_paso) * 1000, 2)
+                pasos.append({
+                    "name": "confirmar",
+                    "success": False,
+                    "duration_ms": duracion_paso,
+                    "detail": str(e)
+                })
+                exito_total = False
+                print(f"❌ Error en paso 2: {e}")
 
-            duracion = round((time.time() - inicio) * 1000, 2)
-            print(f"✅ Flujo completado correctamente en {duracion} ms")
-            return True, [{
-                "name": "flujo_completo",
-                "success": True,
-                "duration_ms": duracion
-            }], duracion
+            # ⏳ Esperar 10 segundos antes de cerrar (para que IA termine de hablar)
+            print("⏳ Esperando 20 segundos antes de cerrar navegador...")
+            time.sleep(10)
+
+            # 🔴 Cerrar navegador
+            print("🔴 Cerrando navegador...")
+            self.driver.quit()
+
+            duracion_total = round((time.time() - inicio_total) * 1000, 2)
+            print(f"✅ Flujo completado correctamente en {duracion_total} ms")
+            return exito_total, pasos, duracion_total
 
         except Exception as e:
-            print(f"❌ Error en flujo: {e}")
-            duracion = round((time.time() - inicio) * 1000, 2)
-            return False, [{
-                "name": "flujo_completo",
-                "success": False,
-                "duration_ms": duracion
-            }], duracion
+            print(f"❌ Error general en flujo: {e}")
+            try:
+                self.driver.quit()
+            except:
+                pass
+            duracion_total = round((time.time() - inicio_total) * 1000, 2)
+            return False, pasos if pasos else [{"name": "flujo_completo", "success": False, "duration_ms": duracion_total, "detail": str(e)}], duracion_total
