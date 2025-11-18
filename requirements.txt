@@ -1,6 +1,7 @@
 locust
+gevent
+greenlet
 selenium
 gtts
 requests
 flask
-playsound
