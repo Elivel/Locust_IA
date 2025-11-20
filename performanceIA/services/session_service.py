@@ -2,7 +2,9 @@
 import requests
 import time
 import csv
+import random
 import os
+import json
 from selenium import webdriver
 # 💡 Importación necesaria: Importamos Options desde selenium.webdriver.chrome.options
 from selenium.webdriver.chrome.options import Options 
