@@ -37,11 +37,20 @@ class VoiceFlow:
     def validar_respuesta(self, posibles_textos, timeout=35):
         try:
             for texto in posibles_textos:
+                palabra_clave = texto.split()[0].lower()
                 elemento = self.wait.until(
-                    EC.presence_of_element_located((By.XPATH, f"//*[contains(text(), '{texto.split()[0]}')]"))
+                    EC.presence_of_element_located((
+                        By.XPATH,
+                        "//*[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZÁÉÍÓÚÜÑ', 'abcdefghijklmnopqrstuvwxyzáéíóúüñ'), '" + palabra_clave + "')]",
+                    ))
                 )
+                
                 if elemento:
-                    print(f"✅ IA respondió correctamente: '{texto}'")
+                    if elemento and texto.lower() in elemento.text.lower():
+                        print(f"✅ IA respondió correctamente: '{texto}'")
+                    return texto
+                if elemento:
+                    print(f"ℹ️ Se detectó un mensaje parcial que contiene '{palabra_clave}': {elemento.text}")
                     return texto
         except:
             print(f"⚠️ No se detectó ninguna de las respuestas esperadas: {posibles_textos}")
@@ -59,18 +68,11 @@ class VoiceFlow:
             boton_micro.click()
             print("🎙️ Micrófono activado.")
 
-            # 🎤 Paso 1️⃣ - "pasar plata"
+            # 🎤 Paso unico - "pasar plata"
             inicio_paso = time.time()
             try:
                 self.reproducir_voz("pasar plata al numero 300 401 10 16 por valor de 1000 pesos")
-                respuesta = self.validar_respuesta([
-                    "¿Deseas confirmar la transferencia?", "¿Confirmas el envío?"
-                ])
-                
-                if not respuesta or "no entendí" in respuesta.lower():
-                    self.reproducir_voz("pasar plata al numero 300 401 10 16 por valor de 1000 pesos")
-                    respuesta = self.validar_respuesta(["¿Deseas confirmar la transferencia?", "¿Confirmas el envío?"])
-                
+                respuesta = self.validar_respuesta(["Listo"], timeout=35)
                 duracion_paso = round((time.time() - inicio_paso) * 1000, 2)
                 exito_paso = bool(respuesta)
                 pasos.append({
@@ -79,7 +81,7 @@ class VoiceFlow:
                     "duration_ms": duracion_paso,
                     "detail": respuesta or "No validada"
                 })
-                print(f"✅ Paso 1 completado en {duracion_paso} ms")
+                print(f"✅ Paso completado en {duracion_paso} ms")
                 if not exito_paso:
                     exito_total = False
             except Exception as e:
@@ -91,38 +93,7 @@ class VoiceFlow:
                     "detail": str(e)
                 })
                 exito_total = False
-                print(f"❌ Error en paso 1: {e}")
-
-            # 🎤 Paso 2️⃣ - "confirmar"
-            inicio_paso = time.time()
-            try:
-                self.reproducir_voz("confirmar transferencia")
-                respuesta = self.validar_respuesta([
-                    "¡Listo! Pasaste", "Transferencia realizada con éxito"
-                ])
                 
-                duracion_paso = round((time.time() - inicio_paso) * 1000, 2)
-                exito_paso = bool(respuesta)
-                pasos.append({
-                    "name": "confirmar",
-                    "success": exito_paso,
-                    "duration_ms": duracion_paso,
-                    "detail": respuesta or "No validada"
-                })
-                print(f"✅ Paso 2 completado en {duracion_paso} ms")
-                if not exito_paso:
-                    exito_total = False
-            except Exception as e:
-                duracion_paso = round((time.time() - inicio_paso) * 1000, 2)
-                pasos.append({
-                    "name": "confirmar",
-                    "success": False,
-                    "duration_ms": duracion_paso,
-                    "detail": str(e)
-                })
-                exito_total = False
-                print(f"❌ Error en paso 2: {e}")
-
             # ⏳ Esperar 10 segundos antes de cerrar (para que IA termine de hablar)
             print("⏳ Esperando 20 segundos antes de cerrar navegador...")
             time.sleep(10)

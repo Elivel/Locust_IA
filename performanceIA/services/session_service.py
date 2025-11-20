@@ -1,6 +1,7 @@
 # performanceIA/services/session_service.py
 import requests
 import time
+import csv
 import os
 from selenium import webdriver
 # 💡 Importación necesaria: Importamos Options desde selenium.webdriver.chrome.options
@@ -11,12 +12,71 @@ from selenium.webdriver.support import expected_conditions as EC
 
 
 class SessionService:
+    
+    @staticmethod
+    def cargar_datos_csv():
+        """Lee DATA_Kairos.csv ubicado en la misma carpeta"""
+        ruta_carpeta = os.path.dirname(__file__)
+        ruta_csv = os.path.join(ruta_carpeta,"DATA_Kairos.csv")
+
+        datos = []
+        with open(ruta_csv, "r", encoding="utf-8") as file:
+            lector = csv.DictReader(file, delimiter=";")
+            for fila in lector:
+                datos.append(fila)
+
+        return datos
 
     @staticmethod
     def obtener_appurl():
         """Llama al backend y obtiene un appUrl con token nuevo"""
         print("📡 Solicitando appUrl al servicio...")
+        usuario = random.choice(SessionService.cargar_datos_csv())
+        documento = usuario["NumDocumento"]
+        celular = usuario["NumCelular"]
+        payload = {
+            "client": {
+                "firstName": "Armando",
+                "secondName": "",
+                "lastName": "Bronca",
+                "secondLastName": "Segura",
+                "balance": 1000,
+                "documentClient": {"number": documento, "type": "01"},
+                "phoneNumber": {"countryId": "+57", "number": celular},
+                "email": "xxx@gmail.com",
+                "userId": "763b9bf753fb9fa56a90a091baa4fcf03c21687bef637ccb4d2e333bc724e5b5",
+                "authenticationType": "DAVIPLATA"
+            },
+            "module": {"id": "KRS", "country": "CO"},
+            "consumer": {
+                "appConsumer": {
+                    "id": "APP_DAVIPLATA",
+                    "platformType": "APP_DAVIPLATAMOVIL",
+                    "canalId": "83",
+                    "sessionId": "123456",
+                    "transactionId": "006355",
+                    "consumerRequestId": "8500",
+                    "transactionDate": "2024-10-04T08:47:21-05:00"
+                },
+                "deviceConsumer": {
+                    "id": documento,
+                    "userAgent": "okhttp/4.9.2",
+                    "soVersion": "Android6.3.0",
+                    "ipDevice": "181.54.52.102",
+                    "appVersion": "6.3.0",
+                    "originDevice": "",
+                    "idDevice": celular
+                },
+                "genericData": {
+                    "dataItem": [
+                        {"key": "tokenFrontend", "value": "2db9a44e-4589-49ba-96a5-b4a3737689e7"},
+                        {"key": "br", "value": "true"}
+                    ]
+                }
+            }
+        }
         # ... (Tu código para obtener appUrl - No se modifica) ...
+        data ={"data": json.dumps(payload), "ttl": 300}
         url = "http://localhost:8076/api/presentacion-cliente?="
         headers = {
             "ufw-channel": "UTF-8",
@@ -28,10 +88,13 @@ class SessionService:
             "Accept": "*/*",
             "x-request-id": f"locust-{int(time.time())}"
         }
-        data = {
-    "data": "{\"client\":{\"firstName\":\"Armando\",\"secondName\":\"\",\"lastName\":\"Bronca\",\"secondLastName\":\"Segura\",\"balance\":9442350.99,\"documentClient\":{\"number\":\"1100114\",\"type\":\"01\"},\"phoneNumber\":{\"countryId\":\"+57\",\"number\":\"3004011014\"},\"email\":\"xxx@gmail.com\",\"userId\":\"763b9bf753fb9fa56a90a091baa4fcf03c21687bef637ccb4d2e333bc724e5b5\",\"authenticationType\":\"DAVIPLATA\"},\"module\":{\"id\":\"KRS\",\"country\":\"CO\"},\"consumer\":{\"appConsumer\":{\"id\":\"APP_DAVIPLATA\",\"platformType\":\"APP_DAVIPLATAMOVIL\",\"canalId\":\"83\",\"sessionId\":\"17280492576755584902345352747985\",\"transactionId\":\"006355\",\"consumerRequestId\":\"8500\",\"transactionDate\":\"2024-10-04T08:47:21-05:00\"},\"deviceConsumer\":{\"id\":\"199066910afd18aed979359520eb9e30e8e2a07673806bc0607cf1e99bfc1876\",\"userAgent\":\"okhttp/4.9.2\",\"soVersion\":\"Android6.3.0\",\"ipDevice\":\"181.54.52.102\",\"appVersion\":\"6.3.0\",\"originDevice\":\"\",\"idDevice\":\"3004011015\"},\"genericData\":{\"dataItem\":[{\"key\":\"tokenFrontend\",\"value\":\"2db9a44e-4589-49ba-96a5-b4a3737689e7\"}]}}}",
-    "ttl": 300
-}
+        resp = requests.post(url, headers=headers, json=data)   
+        if resp.status_code == 200:
+            return resp.json()["data"]["appUrl"]
+
+        print("❌ Error", resp.text)
+        return None     
+
 
         for intento in range(3):
             try:
