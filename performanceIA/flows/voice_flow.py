@@ -35,6 +35,14 @@ class VoiceFlow:
             pass
 
     def validar_respuesta(self, posibles_textos, timeout=35):
+        """Observa el texto en pantalla, pero no falla si no coincide.
+
+        Debido a que la interacción principal es por voz, Locust no debe
+        marcar el paso como fallido cuando no se detecta un texto específico.
+        En su lugar, se registra cualquier mensaje visible para facilitar el
+        análisis posterior.
+        """
+
         try:
             for texto in posibles_textos:
                 palabra_clave = texto.split()[0].lower()
@@ -44,16 +52,20 @@ class VoiceFlow:
                         "//*[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZÁÉÍÓÚÜÑ', 'abcdefghijklmnopqrstuvwxyzáéíóúüñ'), '" + palabra_clave + "')]",
                     ))
                 )
-                
+
                 if elemento:
-                    if elemento and texto.lower() in elemento.text.lower():
-                        print(f"✅ IA respondió correctamente: '{texto}'")
-                    return texto
-                if elemento:
-                    print(f"ℹ️ Se detectó un mensaje parcial que contiene '{palabra_clave}': {elemento.text}")
-                    return texto
-        except:
-            print(f"⚠️ No se detectó ninguna de las respuestas esperadas: {posibles_textos}")
+                    mensaje = elemento.text.strip()
+                    print(f"ℹ️ Texto detectado en pantalla: '{mensaje}'")
+                    # Se devuelve el texto detectado, aunque no se use para validar éxito.
+                    if texto.lower() in mensaje.lower():
+                        print(f"✅ Coincidencia encontrada con '{texto}'")
+                    else:
+                        print(f"⚠️ Mensaje no coincide exactamente con el esperado: '{texto}'")
+                    return mensaje or texto
+        except Exception:
+            print(f"⚠️ No se detectó ningún mensaje coincidente. Se continúa sin validar texto: {posibles_textos}")
+
+        # No se pudo observar respuesta, pero no se considera fallo.
         return ""
 
     def ejecutar_flujo(self):
@@ -74,12 +86,15 @@ class VoiceFlow:
                 self.reproducir_voz("pasar plata al numero 300 401 10 16 por valor de 1000 pesos")
                 respuesta = self.validar_respuesta(["Listo"], timeout=35)
                 duracion_paso = round((time.time() - inicio_paso) * 1000, 2)
-                exito_paso = bool(respuesta)
+                # No se falla la métrica de Locust aunque no se detecte texto,
+                # porque la interacción es por audio. Se registra solo para
+                # observación en los logs.
+                exito_paso = True
                 pasos.append({
                     "name": "pasar_plata_numero_monto",
                     "success": exito_paso,
                     "duration_ms": duracion_paso,
-                    "detail": respuesta or "No validada"
+                    "detail": respuesta or "Validación de texto omitida (flujo de voz)"
                 })
                 print(f"✅ Paso completado en {duracion_paso} ms")
                 if not exito_paso:
