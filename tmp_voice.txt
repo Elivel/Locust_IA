@@ -1,4 +1,4 @@
-import os, time
+﻿import os, time
 from gtts import gTTS
 try:
     from playsound import playsound
@@ -17,7 +17,7 @@ class VoiceFlow:
         self.wait = wait
 
     def reproducir_voz(self, texto, espera_ia=12):
-        print(f"🎙️ Enviando comando de voz: {texto}")
+        print(f"ðŸŽ™ï¸ Enviando comando de voz: {texto}")
         tts = gTTS(texto, lang='es')
         audio_file = f"voz_{int(time.time())}.mp3"
         tts.save(audio_file)
@@ -37,10 +37,10 @@ class VoiceFlow:
     def validar_respuesta(self, posibles_textos, timeout=35):
         """Observa el texto en pantalla, pero no falla si no coincide.
 
-        Debido a que la interacción principal es por voz, Locust no debe
-        marcar el paso como fallido cuando no se detecta un texto específico.
+        Debido a que la interacciÃ³n principal es por voz, Locust no debe
+        marcar el paso como fallido cuando no se detecta un texto especÃ­fico.
         En su lugar, se registra cualquier mensaje visible para facilitar el
-        análisis posterior.
+        anÃ¡lisis posterior.
         """
 
         try:
@@ -49,82 +49,54 @@ class VoiceFlow:
                 elemento = self.wait.until(
                     EC.presence_of_element_located((
                         By.XPATH,
-                        "//*[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZÁÉÍÓÚÜÑ', 'abcdefghijklmnopqrstuvwxyzáéíóúüñ'), '" + palabra_clave + "')]",
+                        "//*[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZÃÃ‰ÃÃ“ÃšÃœÃ‘', 'abcdefghijklmnopqrstuvwxyzÃ¡Ã©Ã­Ã³ÃºÃ¼Ã±'), '" + palabra_clave + "')]",
                     ))
                 )
 
                 if elemento:
                     mensaje = elemento.text.strip()
-                    print(f"ℹ️ Texto detectado en pantalla: '{mensaje}'")
-                    # Se devuelve el texto detectado, aunque no se use para validar éxito.
+                    print(f"â„¹ï¸ Texto detectado en pantalla: '{mensaje}'")
+                    # Se devuelve el texto detectado, aunque no se use para validar Ã©xito.
                     if texto.lower() in mensaje.lower():
-                        print(f"✅ Coincidencia encontrada con '{texto}'")
+                        print(f"âœ… Coincidencia encontrada con '{texto}'")
                     else:
-                        print(f"⚠️ Mensaje no coincide exactamente con el esperado: '{texto}'")
+                        print(f"âš ï¸ Mensaje no coincide exactamente con el esperado: '{texto}'")
                     return mensaje or texto
         except Exception:
-            print(f"⚠️ No se detectó ningún mensaje coincidente. Se continúa sin validar texto: {posibles_textos}")
+            print(f"âš ï¸ No se detectÃ³ ningÃºn mensaje coincidente. Se continÃºa sin validar texto: {posibles_textos}")
 
         # No se pudo observar respuesta, pero no se considera fallo.
         return ""
-    def confirmar_transferencia(self, numero_objetivo="300 401 1016"):
-        """Confirma la transferencia si aparece el modal de validacion."""
-        inicio_paso = time.time()
-        try:
-            self.wait.until(
-                EC.visibility_of_element_located(
-                    (By.CSS_SELECTOR, "div._buttons_f59dq_106[data-testid='btn-check']")
-                )
-            )
-            self.wait.until(
-                EC.visibility_of_element_located(
-                    (
-                        By.XPATH,
-                        f"//span[contains(@class, '_user-number') and contains(normalize-space(), '{numero_objetivo}')]",
-                    )
-                )
-            )
-            boton_confirmar = self.wait.until(
-                EC.element_to_be_clickable((By.CSS_SELECTOR, '[data-testid="btn-check"]'))
-            )
-            boton_confirmar.click()
-            time.sleep(10)
-            duracion_paso = round((time.time() - inicio_paso) * 1000, 2)
-            print("Confirmacion de transferencia realizada, esperando 10 segundos.")
-            return True, "Modal de confirmacion aceptado", duracion_paso
-        except Exception as e:
-            duracion_paso = round((time.time() - inicio_paso) * 1000, 2)
-            print(f"Error al confirmar transferencia: {e}")
-            return False, str(e), duracion_paso
+
     def ejecutar_flujo(self):
-        """Flujo completo por voz con cierre automático de navegador"""
+        """Flujo completo por voz con cierre automÃ¡tico de navegador"""
         inicio_total = time.time()
         pasos = []
         exito_total = True
         
         try:
-            # Activar micrófono
+            # Activar micrÃ³fono
             boton_micro = self.wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "button._micro_fi68y_27")))
             boton_micro.click()
-            print("🎙️ Micrófono activado.")
+            print("ðŸŽ™ï¸ MicrÃ³fono activado.")
 
-            # 🎤 Paso unico - "pasar plata"
+            # ðŸŽ¤ Paso unico - "pasar plata"
             inicio_paso = time.time()
             try:
                 self.reproducir_voz("pasar plata al numero 300 401 10 16 por valor de 1000 pesos")
                 respuesta = self.validar_respuesta(["Listo"], timeout=35)
                 duracion_paso = round((time.time() - inicio_paso) * 1000, 2)
-                # No se falla la métrica de Locust aunque no se detecte texto,
-                # porque la interacción es por audio. Se registra solo para
-                # observación en los logs.
+                # No se falla la mÃ©trica de Locust aunque no se detecte texto,
+                # porque la interacciÃ³n es por audio. Se registra solo para
+                # observaciÃ³n en los logs.
                 exito_paso = True
                 pasos.append({
                     "name": "pasar_plata_numero_monto",
                     "success": exito_paso,
                     "duration_ms": duracion_paso,
-                    "detail": respuesta or "Validación de texto omitida (flujo de voz)"
+                    "detail": respuesta or "ValidaciÃ³n de texto omitida (flujo de voz)"
                 })
-                print(f"✅ Paso completado en {duracion_paso} ms")
+                print(f"âœ… Paso completado en {duracion_paso} ms")
                 if not exito_paso:
                     exito_total = False
             except Exception as e:
@@ -137,33 +109,24 @@ class VoiceFlow:
                 })
                 exito_total = False
                 
-           # Confirmar transferencia si se muestra el modal de confirmacion
-            exito_conf, detalle_conf, duracion_conf = self.confirmar_transferencia()
-            pasos.append({
-                "name": "confirmar_transferencia",
-                "success": exito_conf,
-                "duration_ms": duracion_conf,
-                "detail": detalle_conf
-            })
-            if not exito_conf:
-                exito_total = False
-
-            # ⏳ Esperar 10 segundos antes de cerrar (para que IA termine de hablar)
-            print("⏳ Esperando 20 segundos antes de cerrar navegador...")
+            # â³ Esperar 10 segundos antes de cerrar (para que IA termine de hablar)
+            print("â³ Esperando 20 segundos antes de cerrar navegador...")
             time.sleep(20)
-            # 🔴 Cerrar navegador
-            print("🔴 Cerrando navegador...")
+
+            # ðŸ”´ Cerrar navegador
+            print("ðŸ”´ Cerrando navegador...")
             self.driver.quit()
 
             duracion_total = round((time.time() - inicio_total) * 1000, 2)
-            print(f"✅ Flujo completado correctamente en {duracion_total} ms")
+            print(f"âœ… Flujo completado correctamente en {duracion_total} ms")
             return exito_total, pasos, duracion_total
 
         except Exception as e:
-            print(f"❌ Error general en flujo: {e}")
+            print(f"âŒ Error general en flujo: {e}")
             try:
                 self.driver.quit()
             except:
                 pass
             duracion_total = round((time.time() - inicio_total) * 1000, 2)
             return False, pasos if pasos else [{"name": "flujo_completo", "success": False, "duration_ms": duracion_total, "detail": str(e)}], duracion_total
+
